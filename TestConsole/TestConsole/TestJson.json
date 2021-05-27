@@ -1,0 +1,130 @@
+{
+  "id": "WorkFlows",
+  "WorkFlows": [
+    {
+      "WorkflowName": "BraintreePaymentWorkFlow",
+      "Rules": [
+        {
+          "RuleName": "transaction_amount_mandatory",
+          "SuccessEvent": "10",
+          "ErrorMessage": "provide valid TransactionAmount.",
+          "ErrorType": "Error",
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "input1.TransactionAmount > 0.0"
+        },
+        {
+          "RuleName": "transaction_PaymentMethodToken_mandatory",
+          "SuccessEvent": "20",
+          "ErrorMessage": "provide valid PaymentMethodToken.",
+          "ErrorType": "Error",
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "!string.IsNullOrWhiteSpace(input1.PaymentMethodToken)"
+        },
+        {
+          "RuleName": "transaction_SourceTransactionID_mandatory",
+          "SuccessEvent": "30",
+          "ErrorMessage": "provide valid SourceTransactionID.",
+          "ErrorType": "Error",
+          "localParams": [
+            {
+              "name": "isBillingAggrement",
+              "expression": "input1.paymentMethodTokenType.ToLower() == \"billingagreement\""
+            },
+            {
+              "name": "isSourceTransactionIdMandatory",
+              "expression": "input2.ChannelID.ToUpper() != input3.NA_CICA_ANH.ToString() && input2.ChannelID.ToUpper() != input3.NA_CSB_COM.ToString() && (!(input1.paymentMethodTypes.Equals(input4.PayPal) && isBillingAggrement))"
+            }
+          ],
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "isSourceTransactionIdMandatory ? !string.IsNullOrWhiteSpace(input1.SourceTransactionId) : true"
+        },
+        {
+          "RuleName": "transaction_AmountDecimalPlaces_Check",
+          "SuccessEvent": "40",
+          "ErrorMessage": "provide valid amount.",
+          "ErrorType": "Error",
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "decimal.Round(input1.TransactionAmount, 2) == input1.TransactionAmount ? true : false"
+        },
+        {
+          "RuleName": "transaction_policyInformation_NA_CSB_COM_mandatory",
+          "SuccessEvent": "50",
+          "ErrorMessage": "PolicyNumber, PolicySource, PolicyName, ProducerCode and PolicyEffectiveDate are mandatory, cannot be null or empty",
+          "ErrorType": "Error",
+          "localParams": [
+            {
+              "name": "isCSBChannel",
+              "expression": "input2.ChannelID.ToUpper() == input3.NA_CSB_COM.ToString()"
+            },
+            {
+              "name": "isPolicyObjectProvided",
+              "expression": "input1.PolicyInfo == null ? false : true"
+            },
+            {
+              "name": "policyInformationNotProvidedCount",
+              "expression": "isPolicyObjectProvided ? input1.PolicyInfo.Where(x => string.IsNullOrEmpty(x.PolicySource) || string.IsNullOrEmpty(x.PolicyNumber) || string.IsNullOrEmpty(x.PolicyEffectiveDate) || string.IsNullOrEmpty(x.ProductType) || string.IsNullOrEmpty(x.ProducerCode)).ToList().Count() : 1"
+            }
+          ],
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "isCSBChannel ? policyInformationNotProvidedCount == 0 : true"
+        },
+        {
+          "RuleName": "transaction_policyInformation_paypalPaymentMethod_mandatory",
+          "SuccessEvent": "60",
+          "ErrorMessage": "Policy information is mandatory, cannot be null or empty",
+          "ErrorType": "Error",
+          "localParams": [
+            {
+              "name": "isBillingAggrement",
+              "expression": "input1.paymentMethodTokenType.ToLower() == \"billingagreement\""
+            },
+            {
+              "name": "isNotCSBOrMajescoChannel",
+              "expression": "input2.ChannelID.ToUpper() != input3.NA_CSB_COM.ToString() && input2.ChannelID.ToUpper() != input3.NA_SCI_MAJESCO.ToString()"
+            },
+            {
+              "name": "isPolicyObjectProvided",
+              "expression": "input1.PolicyInfo == null ? false : true"
+            },
+            {
+              "name": "policyInformationNotProvidedCount",
+              "expression": "isPolicyObjectProvided ? input1.PolicyInfo.Where(x => string.IsNullOrEmpty(x.PolicySource) || string.IsNullOrEmpty(x.PolicyNumber) || string.IsNullOrEmpty(x.PolicyEffectiveDate) || string.IsNullOrEmpty(x.ProductType) || string.IsNullOrEmpty(x.ProducerCode)).ToList().Count() : 1"
+            },
+            {
+              "name": "isPaymentMethodTypePayPalAndPaymentTypeFullPayOrPartialPay",
+              "expression": "input1.paymentMethodTypes.Equals(input4.PayPal) && !isBillingAggrement && (input1.PaymentType == input5.FullPay || input1.PaymentType == input5.PartialPay)"
+            }
+          ],
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "isNotCSBOrMajescoChannel &&  isPaymentMethodTypePayPalAndPaymentTypeFullPayPartialPay ? policyInformationNotProvidedCount == 0 : true"
+        },
+        {
+          "RuleName": "transaction_policyNumber_recurringPaymentType_mandatory",
+          "SuccessEvent": "60",
+          "ErrorMessage": "Policy information is mandatory, cannot be null or empty",
+          "ErrorType": "Error",
+          "localParams": [
+            {
+              "name": "isNotCSBOrMajescoChannel",
+              "expression": "input2.ChannelID.ToUpper() != input3.NA_CSB_COM.ToString() && input2.ChannelID.ToUpper() != input3.NA_SCI_MAJESCO.ToString()"
+            },
+            {
+              "name": "isPolicyObjectProvided",
+              "expression": "input1.PolicyInfo == null ? false : true"
+            },
+            {
+              "name": "policyNumberNotProvidedCount",
+              "expression": "isPolicyObjectProvided ? input1.PolicyInfo.Where(x => string.IsNullOrEmpty(x.PolicyNumber)).ToList().Count() : 1"
+            },
+            {
+              "name": "isPaymentTypeRecurring",
+              "expression": "input1.PaymentType == input5.Recurring"
+            }
+          ],
+          "RuleExpressionType": "LambdaExpression",
+          "Expression": "isNotCSBOrMajescoChannel && isPaymentTypeRecurring ? policyNumberNotProvidedCount == 0  : true"
+        }
+      ]
+    }
+  ]
+}

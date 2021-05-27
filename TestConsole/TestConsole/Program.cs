@@ -1,57 +1,39 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using RulesEngine.Models;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestConsole;
+
 class Programs
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Please enter the required string");
-        string inputString = Console.ReadLine();
-        bool validString = CheckString(inputString);
-        Console.WriteLine(validString);
-    }
-
-    private static bool CheckString(string inputString)
-    {
-        Stack<char> collectionStack = new Stack<char>();
-
-        bool isValid = true;
-
-        for (int i = 0; i < inputString.Length; i++)
+        var rules = JsonConvert.DeserializeObject<RuleEngineWorkFlowModel>(File.ReadAllText(@"C:\Users\bhchag\source\repos\TestRepository\TestConsole\TestConsole\TestJson.json"));
+        Test test = new Test()
         {
-            switch (inputString[i])
-            {
-                case '(':
-                case '{':
-                case '[':
-                    // If the element is a openeing bracket, then add to the stack.
-                    collectionStack.Push(inputString[i]);
-                    break;
+            oneElement = "dd",
+            threeElement = "ff",
+            fourElement = "fff",
+            twoElement = "dd"
+        };
+        List<Test> list = new List<Test>();
+        list.Add(test);
+        var tt = list.Where(x => string.IsNullOrEmpty(x.fourElement) || string.IsNullOrEmpty(x.threeElement) || string.IsNullOrEmpty(x.oneElement) || string.IsNullOrEmpty(x.twoElement)).ToList().Count();
 
-                case ')':
-                    // If the stack has elements then remove the element using pop and continue to the next char else mark the string as invalid - the parenthesis are not matching
-                    isValid = (collectionStack.Count > 0 && collectionStack.Pop() == '(');
-                    break;
 
-                case '}':
-                    // If the stack has elements then remove the element using pop and continue to the next char else mark the string as invalid - the parenthesis are not matching
-                    isValid = (collectionStack.Count > 0 && collectionStack.Pop() == '{');
-                    break;
-
-                case ']':
-                    // If the stack has elements then remove the element using pop and continue to the next char else mark the string as invalid - the parenthesis are not matching
-                    isValid = (collectionStack.Count > 0 && collectionStack.Pop() == '[');
-                    break;
-
-                default:
-                    break;
-            }
-
-            if (!isValid) break;
-        }
-
-        return isValid && collectionStack.Count == 0;
+        //x.Where(x => string.IsNullOrEmpty(x.fourElement) || string.IsNullOrEmpty(x.threeElement) || string.IsNullOrEmpty(x.oneElement) || string.IsNullOrEmpty(x.twoElement)).ToList();
     }
+
+}
+
+public class Test
+{
+    public string oneElement { get; set; }
+    public string twoElement { get; set; }
+    public string threeElement { get; set; }
+    public string fourElement { get; set; }
 }
